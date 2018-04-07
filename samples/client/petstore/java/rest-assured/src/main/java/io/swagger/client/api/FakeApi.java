@@ -19,6 +19,7 @@ import io.swagger.client.model.Client;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.OffsetDateTime;
 import io.swagger.client.model.OuterComposite;
+import io.swagger.client.model.User;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +69,10 @@ public class FakeApi {
 
     public FakeOuterStringSerializeOper fakeOuterStringSerialize() {
         return new FakeOuterStringSerializeOper(reqSpec);
+    }
+
+    public TestBodyWithQueryParamsOper testBodyWithQueryParams() {
+        return new TestBodyWithQueryParamsOper(reqSpec);
     }
 
     public TestClientModelOper testClientModel() {
@@ -390,6 +395,74 @@ public class FakeApi {
          * Customise response specification
          */
         public FakeOuterStringSerializeOper respSpec(Consumer<ResponseSpecBuilder> consumer) {
+            consumer.accept(respSpec);
+            return this;
+        }
+    }
+    /**
+     * 
+     * 
+     *
+     * @see #body  (required)
+     * @see #queryQuery  (required)
+     */
+    public class TestBodyWithQueryParamsOper {
+
+        public static final String REQ_URI = "/fake/body-with-query-params";
+
+        private RequestSpecBuilder reqSpec;
+
+        private ResponseSpecBuilder respSpec;
+
+        public TestBodyWithQueryParamsOper() {
+            this.reqSpec = new RequestSpecBuilder();
+            reqSpec.setContentType("application/json");
+            reqSpec.setAccept("application/json");
+            this.respSpec = new ResponseSpecBuilder();
+        }
+
+        public TestBodyWithQueryParamsOper(RequestSpecBuilder reqSpec) {
+            this.reqSpec = reqSpec;
+            reqSpec.setContentType("application/json");
+            reqSpec.setAccept("application/json");
+            this.respSpec = new ResponseSpecBuilder();
+        }
+
+        /**
+         * PUT /fake/body-with-query-params
+         */
+        public <T> T execute(Function<Response, T> handler) {
+            return handler.apply(RestAssured.given().spec(reqSpec.build()).expect().spec(respSpec.build()).when().request(PUT, REQ_URI));
+        }
+
+         /**
+         * @param body (User)  (required)
+         */
+        public TestBodyWithQueryParamsOper body(User body) {
+            reqSpec.setBody(getJSON().serialize(body));
+            return this;
+        }
+
+        /**
+         * @param query (String)  (required)
+         */
+        public TestBodyWithQueryParamsOper queryQuery(Object... query) {
+            reqSpec.addQueryParam("query", query);
+            return this;
+        }
+
+        /**
+         * Customise request specification
+         */
+        public TestBodyWithQueryParamsOper reqSpec(Consumer<RequestSpecBuilder> consumer) {
+            consumer.accept(reqSpec);
+            return this;
+        }
+
+        /**
+         * Customise response specification
+         */
+        public TestBodyWithQueryParamsOper respSpec(Consumer<ResponseSpecBuilder> consumer) {
             consumer.accept(respSpec);
             return this;
         }
