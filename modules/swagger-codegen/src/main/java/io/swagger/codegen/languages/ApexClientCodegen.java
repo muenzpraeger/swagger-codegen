@@ -222,8 +222,6 @@ public class ApexClientCodegen extends AbstractApexCodegen {
     public void setBuildMethod(String buildMethod) {
         if (buildMethod.equals("ant")) {
             this.srcPath = "deploy/";
-        } else {
-            this.srcPath = "src/";
         }
         this.buildMethod = buildMethod;
     }
