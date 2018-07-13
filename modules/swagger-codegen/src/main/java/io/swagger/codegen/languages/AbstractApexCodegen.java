@@ -358,11 +358,7 @@ public abstract class AbstractApexCodegen extends DefaultCodegen implements Code
             ((PasswordProperty) p).setExample(example);
             example = "'" + example + "'";
         } else if (p instanceof RefProperty) {
-            if(languageSpecificPrimitives().contains(getTypeDeclaration(p))) {
-                example = getTypeDeclaration(p) + ".getExample()";
-            } else {
-                example = "''";
-            }
+            example = getTypeDeclaration(p) + ".getExample()";
         } else if (p instanceof StringProperty) {
             StringProperty sp = (StringProperty) p;
             List<String> enums = sp.getEnum();

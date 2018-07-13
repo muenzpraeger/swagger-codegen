@@ -110,7 +110,7 @@ public class Swagger {
         protected String preferredContentType = 'application/json';
         protected String preferredAccept = 'application/json';
 
-        public  String calloutName {get; set;}
+        public String calloutName {get; set;}
         public String basePath {get; set;}
 
         @TestVisible
