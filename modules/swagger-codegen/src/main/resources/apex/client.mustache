@@ -12,6 +12,9 @@ public class {{classPrefix}}Client extends Swagger.ApiClient {
         authentications.put('{{name}}', new Swagger.ApiKeyHeaderAuth('{{keyParamName}}'));
       {{/isKeyInQuery}}
     {{/isApiKey}}
+{{#isBasic}}
+        authentications.put('{{name}}', new Swagger.HttpBasicAuth());
+{{/isBasic}}
   {{/authMethods}}
     }
 {{/hasAuthMethods}}

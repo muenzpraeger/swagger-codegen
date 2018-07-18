@@ -19,6 +19,7 @@ public class ApexClientCodegen extends AbstractApexCodegen {
     private static final String API_VERSION = "apiVersion";
     private static final String BUILD_METHOD = "buildMethod";
     private static final String NAMED_CREDENTIAL = "namedCredential";
+    private static final String EXISTING_NAMED_CREDENTIAL = "existingNamedCredential";
     private static final Logger LOGGER = LoggerFactory.getLogger(ApexClientCodegen.class);
     private String classPrefix = "Swag";
     private String apiVersion = "42.0";
@@ -33,6 +34,7 @@ public class ApexClientCodegen extends AbstractApexCodegen {
 
         importMapping.clear();
 
+        supportsInheritance = true;
         embeddedTemplateDir = templateDir = "apex";
         outputFolder = "generated-code" + File.separator + "apex";
         modelPackage = apiPackage = srcPath + "classes";
@@ -52,6 +54,7 @@ public class ApexClientCodegen extends AbstractApexCodegen {
         cliOptions.add(CliOption.newString(API_VERSION, "The Metadata API version number to use for components in this package."));
         cliOptions.add(CliOption.newString(BUILD_METHOD, "The build method for this package."));
         cliOptions.add(CliOption.newString(NAMED_CREDENTIAL, "The named credential name for the HTTP callouts"));
+        cliOptions.add(CliOption.newString(EXISTING_NAMED_CREDENTIAL, "A preexisting named credential name for the HTTP callouts"));
 
         supportingFiles.add(new SupportingFile("Swagger.cls", srcPath + "classes", "Swagger.cls"));
         supportingFiles.add(new SupportingFile("cls-meta.mustache", srcPath + "classes", "Swagger.cls-meta.xml"));
@@ -128,24 +131,34 @@ public class ApexClientCodegen extends AbstractApexCodegen {
         }
         additionalProperties.put(BUILD_METHOD, buildMethod);
 
-        if (additionalProperties.containsKey(NAMED_CREDENTIAL)) {
+        if (additionalProperties.containsKey(EXISTING_NAMED_CREDENTIAL)) {
             setNamedCredential((String)additionalProperties.get(NAMED_CREDENTIAL));
+        } else if (additionalProperties.containsKey(NAMED_CREDENTIAL)) {
+            setNamedCredential((String)additionalProperties.get(NAMED_CREDENTIAL));
+        } else {
+            // OK this is weird.
+            additionalProperties.put(NAMED_CREDENTIAL, namedCredential);
         }
-        additionalProperties.put(NAMED_CREDENTIAL, namedCredential);
 
         postProcessOpts();
     }
 
     @Override
     public void preprocessSwagger(Swagger swagger) {
-        Info info = swagger.getInfo();
-        String calloutLabel = info.getTitle();
-        additionalProperties.put("calloutLabel", calloutLabel);
-        String sanitized = sanitizeName(calloutLabel);
-        additionalProperties.put("calloutName", sanitized);
-        supportingFiles.add(new SupportingFile("namedCredential.mustache", srcPath + "/namedCredentials",
-            sanitized + ".namedCredential-meta.xml"
-        ));
+        if (!additionalProperties.containsKey(EXISTING_NAMED_CREDENTIAL)) {
+            Info info = swagger.getInfo();
+            String calloutLabel = info.getTitle();
+            additionalProperties.put("calloutLabel", calloutLabel);
+            String sanitized = sanitizeName(calloutLabel);
+            additionalProperties.put("calloutName", sanitized);
+            // Don't emit this if I want to use my existing one
+            supportingFiles.add(new SupportingFile("namedCredential.mustache", srcPath + "/namedCredentials",
+                                                   sanitized + ".namedCredential-meta.xml"
+                                                   ));
+        } else {
+            additionalProperties.put("calloutLabel", additionalProperties.get(EXISTING_NAMED_CREDENTIAL));
+            additionalProperties.put("calloutName", sanitizeName((String) additionalProperties.get(EXISTING_NAMED_CREDENTIAL)));
+        }
 
         if (additionalProperties.get(BUILD_METHOD).equals("sfdx")) {
             generateSfdxSupportingFiles();
@@ -231,9 +244,13 @@ public class ApexClientCodegen extends AbstractApexCodegen {
     public void setBuildMethod(String buildMethod) {
         if (buildMethod.equals("ant")) {
             this.srcPath = "deploy/";
+        } else if (buildMethod.equals("sfdx")) {
+            this.srcPath = "force-app/main/default";
         } else {
-            this.srcPath = "src/";
+            throw new RuntimeException("Unknown build method " + buildMethod);
         }
+                
+
         this.buildMethod = buildMethod;
     }
 
@@ -262,8 +279,8 @@ public class ApexClientCodegen extends AbstractApexCodegen {
 
     private void postProcessOpts() {
         supportingFiles.add(
-            new SupportingFile("client.mustache", srcPath + "classes", classPrefix + "Client.cls"));
-        supportingFiles.add(new SupportingFile("cls-meta.mustache", srcPath + "classes",
+            new SupportingFile("client.mustache", srcPath + "/classes", classPrefix + "Client.cls"));
+        supportingFiles.add(new SupportingFile("cls-meta.mustache", srcPath + "/classes",
             classPrefix + "Client.cls-meta.xml"
         ));
     }

@@ -65,6 +65,15 @@ public class Swagger {
         }
     }
 
+    public class HttpBasicAuth implements Authentication {
+        String credentials;
+        public void setCredentials(String credentials) {
+            this.credentials = credentials;
+        }
+        public void apply(Map<String, Object> headers, List<Param> query) {
+            headers.put('Basic', credentials);
+        }
+    }
  
     public class ApiException extends Exception {
         private final Integer code;
@@ -100,8 +109,9 @@ public class Swagger {
     public virtual class ApiClient {
         protected String preferredContentType = 'application/json';
         protected String preferredAccept = 'application/json';
-        protected final String basePath;
-        protected final String calloutName;
+
+        public String calloutName {get; set;}
+        public String basePath {get; set;}
 
         @TestVisible
         protected final Map<String, Authentication> authentications = new Map<String, Authentication>();
@@ -278,7 +288,9 @@ public class Swagger {
         protected virtual List<Authentication> getAuthMethods(List<String> names) {
             List<Authentication> authMethods = new List<Authentication>();
             for (String name : names) {
-                authMethods.add(authentications.get(name));
+                if (authentications.containsKey(name)) {
+                    authMethods.add(authentications.get(name));
+                }
             }
             return authMethods;
         }
@@ -296,7 +308,13 @@ public class Swagger {
         protected virtual String toEndpoint(String path, Map<String, Object> params,
                                             List<Param> queryParams) {
             String query = '?' + paramsToString(queryParams);
-            return 'callout:' + calloutName + toPath(path, params) + query.removeEnd('?');
+            String endpoint = null;
+            if (new URL(basePath).getProtocol() != null) {
+                endpoint = basePath + toPath(path, params) + query.removeEnd('?');
+            } else {
+                endpoint = 'callout:' + calloutName + toPath(basePath + path, params) + query.removeEnd('?');
+            }
+            return endpoint;
         }
 
         @TestVisible
