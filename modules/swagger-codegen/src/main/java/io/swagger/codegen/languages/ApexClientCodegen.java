@@ -34,6 +34,7 @@ public class ApexClientCodegen extends AbstractApexCodegen {
 
         importMapping.clear();
 
+        supportsInheritance = true;
         embeddedTemplateDir = templateDir = "apex";
         outputFolder = "generated-code" + File.separator + "apex";
         modelPackage = apiPackage = srcPath + "classes";
